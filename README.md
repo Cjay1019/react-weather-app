@@ -2,6 +2,10 @@
 
 A React single-page app for logging in, saving a zip code, and viewing today’s weather. It talks to a .NET Core backend API for auth, zip storage, and weather data.
 
+**Live site (Azure Static Web Apps):** [https://nice-flower-040f04a0f.6.azurestaticapps.net/](https://nice-flower-040f04a0f.6.azurestaticapps.net/)
+
+**Backend API:** The .NET Core API (Azure Functions) that provides auth, zip storage, and weather data lives in a separate repo: [Cjay1019/.net-core-weather-API](https://github.com/Cjay1019/.net-core-weather-API).
+
 ## Tech stack
 
 - **React 19** + **TypeScript**
@@ -76,8 +80,6 @@ Create a `.env` in the project root. **Do not commit tokens or secrets.**
 - In **dev**, `getBaseUrl()` uses `VITE_API_BASE_URL_LOCAL` or falls back to `http://localhost:7071/api`.
 - In **production**, it uses `VITE_API_BASE_URL` and throws if it’s missing.
 
-Vite only exposes variables that start with `VITE_`.
-
 ---
 
 ## Development
@@ -87,11 +89,13 @@ npm install
 npm run dev
 ```
 
-Runs the Vite dev server. Ensure your backend is reachable at the URL defined by `VITE_API_BASE_URL_LOCAL` (or the default). The app will call it for auth, zip, and weather.
+Runs the Vite dev server at **http://localhost:5173**. Ensure your backend is reachable at the URL defined by `VITE_API_BASE_URL_LOCAL` (or the default `http://localhost:7071/api`). The app calls that URL for auth, zip, and weather. The app is built as a static front-end only; there is no ASP.NET or dev-cert config in `vite.config.ts`.
 
 ---
 
 ## Build for production
+
+**Node:** Use Node.js **20.19+** or **22.12+** (see `package.json` `engines`). The same requirement applies in CI so the Azure Static Web Apps build picks a compatible Node version.
 
 ```bash
 npm run build
@@ -109,20 +113,22 @@ The app deploys to the Static Web App **ReactASPTestStatic** (Production). You c
 
 ### GitHub Actions (automatic)
 
-Pushing to the `main` branch of [react-weather-app](https://github.com/Cjay1019/react-weather-app) triggers a build and deploy to **ReactASPTestStatic** Production.
+Pushing to the `main` branch triggers a build and deploy to **ReactASPTestStatic** Production.
 
 **Workflow:** [`.github/workflows/azure-static-web-apps.yml`](.github/workflows/azure-static-web-apps.yml)
+
+The workflow uses **Azure/static-web-apps-deploy@v1**: it checks out the repo, runs `npm run build` inside the action’s build environment, and deploys the `dist/` output. `VITE_API_BASE_URL` is passed into the build via the step’s `env` (not as an action input), so the production bundle uses your API URL. The app’s `package.json` specifies `"engines": { "node": "^20.19.0 || >=22.12.0" }` so the Azure/Oryx build uses a Node version compatible with Vite 7.
 
 **Required GitHub secrets** (repo **Settings → Secrets and variables → Actions**):
 
 | Secret | Description |
 |--------|-------------|
 | `AZURE_STATIC_WEB_APPS_API_TOKEN` | Deployment token. Azure Portal → **ReactASPTestStatic** → **Manage deployment token** → copy. |
-| `VITE_API_BASE_URL` | Production API base URL (e.g. `https://your-api.azurewebsites.net/api`). Used at build time so the deployed app calls the right backend. |
+| `VITE_API_BASE_URL` | Production API base URL (e.g. `https://your-api.azurewebsites.net/api`). Injected at build time via the workflow step’s `env`. |
 
 - **Push to `main`** → build and deploy to Production.
 - **Pull request to `main`** → build and deploy to a staging URL for that PR.
-- **PR closed** → staging deployment is cleaned up.
+- **PR closed** → a separate job runs to close the PR deployment.
 
 Do not commit these values; keep them as repo secrets.
 
