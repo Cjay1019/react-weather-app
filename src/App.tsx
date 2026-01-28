@@ -14,6 +14,7 @@ function App() {
   const [weather, setWeather] = useState<WeatherResponse | null>(null);
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [weatherError, setWeatherError] = useState<string | null>(null);
+  const [zipError, setZipError] = useState<string | null>(null);
 
   const baseUrl = getBaseUrl();
 
@@ -27,7 +28,13 @@ function App() {
         body: JSON.stringify({ zip: zipCode }),
       });
       if (!res.ok) {
-        setWeatherError(res.statusText || 'Failed to load weather');
+        if (res.status === 404) {
+          setZipError('That zip code was not found. Please enter a valid 5-digit U.S. zip code.');
+          setZip(null);
+          setShowZipForm(true);
+        } else {
+          setWeatherError(res.statusText || 'Failed to load weather');
+        }
         return;
       }
       const data: WeatherResponse = await res.json();
@@ -61,9 +68,11 @@ function App() {
         userId={userId}
         initialZip={showZipForm ? zip ?? '' : ''}
         isUpdate={showZipForm}
+        initialError={zipError}
         onSuccess={(newZip) => {
           setZip(newZip);
           setShowZipForm(false);
+          setZipError(null);
           setWeather(null);
           loadWeather(newZip);
         }}

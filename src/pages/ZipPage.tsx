@@ -6,16 +6,21 @@ interface ZipPageProps {
   initialZip: string;
   isUpdate: boolean;
   onSuccess: (zip: string) => void;
+  initialError?: string | null;
 }
 
-export function ZipPage({ userId, initialZip, isUpdate, onSuccess }: ZipPageProps) {
+export function ZipPage({ userId, initialZip, isUpdate, onSuccess, initialError }: ZipPageProps) {
   const [zipInput, setZipInput] = useState(initialZip);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError ?? null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     setZipInput(initialZip);
   }, [initialZip]);
+
+  useEffect(() => {
+    setError(initialError ?? null);
+  }, [initialError]);
 
   const baseUrl = getBaseUrl();
 

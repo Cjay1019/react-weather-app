@@ -11,12 +11,15 @@ export function AuthPage({ onSuccess }: AuthPageProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const baseUrl = getBaseUrl();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
     setError(null);
+    setSubmitting(true);
     try {
       if (isRegister) {
         const res = await fetch(`${baseUrl}/user`, {
@@ -26,7 +29,7 @@ export function AuthPage({ onSuccess }: AuthPageProps) {
         });
         if (!res.ok) {
           if (res.status === 500) {
-            setError('The server is temporarily unavailable. The database may be spinning back up—please try again in a moment.');
+            setError('The server is temporarily unavailable. The database may be spinning back up—please wait one minute and try again.');
           } else {
             setError(res.statusText || 'Registration failed');
           }
@@ -46,7 +49,7 @@ export function AuthPage({ onSuccess }: AuthPageProps) {
         });
         if (!res.ok) {
           if (res.status === 500) {
-            setError('The server is temporarily unavailable. The database may be spinning back up—please try again in a moment.');
+            setError('The server is temporarily unavailable. The database may be spinning back up—please wait one minute and try again.');
           } else {
             setError(res.statusText || 'Login failed');
           }
@@ -61,6 +64,8 @@ export function AuthPage({ onSuccess }: AuthPageProps) {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Request failed');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -89,7 +94,9 @@ export function AuthPage({ onSuccess }: AuthPageProps) {
           />
         </label>
         {error && <p className="error">{error}</p>}
-        <button type="submit">{isRegister ? 'Register' : 'Log in'}</button>
+        <button type="submit" disabled={submitting}>
+          {isRegister ? 'Register' : 'Log in'}
+        </button>
         <button
           type="button"
           className="link-button"
