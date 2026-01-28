@@ -25,7 +25,11 @@ export function AuthPage({ onSuccess }: AuthPageProps) {
           body: JSON.stringify({ username, password }),
         });
         if (!res.ok) {
-          setError(res.statusText || 'Registration failed');
+          if (res.status === 500) {
+            setError('The server is temporarily unavailable. The database may be spinning back up—please try again in a moment.');
+          } else {
+            setError(res.statusText || 'Registration failed');
+          }
           return;
         }
         const data: RegisterResponse = await res.json();
